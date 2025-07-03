@@ -22,8 +22,8 @@ export default function FilterBar({ onFilterChange, onClear }: FilterBarProps) {
 
   // Função para montar o nome do usuário com base nos campos disponíveis
   const getUserName = (user: UserWithFullName) => {
-    if (user.FULL_NAME && user.FULL_NAME.trim() !== '') {
-      return user.FULL_NAME;
+    if (user.fullName && user.fullName.trim() !== '') {
+      return user.fullName;
     }
     if (user.NAME || user.LAST_NAME) {
       return `${user.NAME ?? ''} ${user.LAST_NAME ?? ''}`.trim();

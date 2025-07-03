@@ -56,7 +56,7 @@ function renderActiveShape(props: ActiveShapeProps) {
   const RADIAN = Math.PI / 180;
   const {
     cx, cy, midAngle, innerRadius, outerRadius,
-    startAngle, endAngle, fill, payload, percent, value,
+    startAngle, endAngle, fill, percent, value,
   } = props;
 
   const sin = Math.sin(-RADIAN * midAngle);
@@ -234,12 +234,12 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
                 innerRadius={40}
                 paddingAngle={3}
                 activeIndex={activeIndex !== null ? activeIndex : undefined}
-                activeShape={renderActiveShape}
-                onClick={(data, index) => {
+                activeShape={renderActiveShape as unknown}
+                onClick={(_, index) => {
                   setActiveIndex(index === activeIndex ? null : index);
                 }}
               >
-                {allChartData.map((entry, index) => (
+                {allChartData.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}

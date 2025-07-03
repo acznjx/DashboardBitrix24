@@ -1,3 +1,12 @@
+export interface UserWithFullName {
+  ID: string;
+  fullName: string;
+
+  // Campos opcionais para montar o nome completo, conforme seu código
+  NAME?: string;
+  LAST_NAME?: string;
+}
+
 export interface Deal {
   ID: string;
   CATEGORY_ID: string;
