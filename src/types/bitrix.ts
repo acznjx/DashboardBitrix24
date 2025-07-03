@@ -19,5 +19,8 @@ export interface Deal {
 
 export interface UserWithFullName {
   ID: string;
+  NAME?: string;
+  LAST_NAME?: string;
   fullName: string;
 }
+
