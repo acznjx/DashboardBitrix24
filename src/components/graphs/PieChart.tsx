@@ -10,11 +10,13 @@ import {
   Sector,
 } from 'recharts';
 
+// Cores usadas para os usuários no gráfico
 const COLORS = [
   '#0D3B66', '#144E86', '#1C6BA0', '#2980B9',
   '#4A90E2', '#7BAEDC', '#A3BDD9', '#C5D7EB',
 ];
 
+// Tipagens esperadas
 interface Deal {
   ID: string;
   CATEGORY_ID: string;
@@ -38,8 +40,8 @@ interface Props {
   loading: boolean;
 }
 
+// Forma animada usada ao passar o mouse em um setor do gráfico
 const renderActiveShape = (props: unknown) => {
-  // Para acessar as propriedades, você precisa afirmar o tipo ou usar type assertion:
   const {
     cx = 0,
     cy = 0,
@@ -106,12 +108,13 @@ const renderActiveShape = (props: unknown) => {
   );
 };
 
-
-
 export default function StatusPieChart({ userId, users, deals, loading }: Props) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Nome do usuário atualmente ativo (selecionado no gráfico ou legenda)
+  const [activeName, setActiveName] = useState<string | null>(null);
+
+  // Dados para TODOS os usuários com cards
   const allChartData = useMemo(() => {
     const counts: Record<string, { fullName: string; count: number }> = {};
     users.forEach(user => {
@@ -135,16 +138,18 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
       }));
   }, [users, deals, userId]);
 
-  const legendData = useMemo(() => {
+  // Apenas os 7 usuários com mais cards para exibir na legenda
+  const top7LegendData = useMemo(() => {
     return [...allChartData]
       .sort((a, b) => b.value - a.value)
       .slice(0, 7);
   }, [allChartData]);
 
+  // Fecha o destaque do gráfico ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setActiveIndex(null);
+        setActiveName(null);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -164,6 +169,7 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
         userSelect: 'none',
       }}
     >
+      {/* LEGENDA */}
       <div
         style={{
           width: '180px',
@@ -174,20 +180,20 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
           paddingRight: '1rem',
           fontSize: '0.9rem',
           color: '#333',
-          userSelect: 'none',
         }}
       >
-        {legendData.length === 0 ? (
+        {top7LegendData.length === 0 ? (
           <div style={{ color: '#718096', textAlign: 'center' }}>No data</div>
         ) : (
-          legendData.map((entry, index) => {
+          top7LegendData.map((entry, index) => {
             const total = allChartData.reduce((acc, cur) => acc + cur.value, 0);
             const percent = ((entry.value / total) * 100).toFixed(1);
-            const isActive = activeIndex === index;
+            const isActive = activeName === entry.name;
+
             return (
               <div
-                key={`legend-${index}`}
-                onClick={() => setActiveIndex(isActive ? null : index)}
+                key={`legend-${entry.name}`}
+                onClick={() => setActiveName(isActive ? null : entry.name)}
                 style={{
                   cursor: 'pointer',
                   display: 'flex',
@@ -195,8 +201,6 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
                   gap: '0.5rem',
                   fontWeight: isActive ? '700' : '500',
                   color: isActive ? COLORS[index % COLORS.length] : '#333',
-                  userSelect: 'none',
-                  transition: 'color 0.3s ease, fontWeight 0.3s ease',
                 }}
                 title={`Click to highlight ${entry.name}`}
               >
@@ -209,9 +213,7 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
                     display: 'inline-block',
                   }}
                 />
-                <span style={{ flexGrow: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {entry.name}
-                </span>
+                <span style={{ flexGrow: 1 }}>{entry.name}</span>
                 <span style={{ marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
                   {percent}%
                 </span>
@@ -221,6 +223,7 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
         )}
       </div>
 
+      {/* GRÁFICO DE PIZZA */}
       <div style={{ flexGrow: 1 }}>
         {loading ? (
           <div style={{ textAlign: 'center', marginTop: '3rem' }}>Loading...</div>
@@ -238,10 +241,15 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
                 outerRadius={80}
                 innerRadius={40}
                 paddingAngle={3}
-                activeIndex={activeIndex !== null ? activeIndex : undefined}
+                activeIndex={
+                  activeName
+                    ? allChartData.findIndex(e => e.name === activeName)
+                    : undefined
+                }
                 activeShape={renderActiveShape}
-                onClick={(_data, index) => {
-                  setActiveIndex(index === activeIndex ? null : index);
+                onClick={(_, index) => {
+                  const name = allChartData[index]?.name;
+                  setActiveName(name === activeName ? null : name);
                 }}
               >
                 {allChartData.map((_, index) => (
@@ -249,8 +257,8 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
                     cursor="pointer"
-                    stroke={index === activeIndex ? '#000' : undefined}
-                    strokeWidth={index === activeIndex ? 3 : 1}
+                    stroke={allChartData[index].name === activeName ? '#000' : undefined}
+                    strokeWidth={allChartData[index].name === activeName ? 3 : 1}
                   />
                 ))}
               </Pie>

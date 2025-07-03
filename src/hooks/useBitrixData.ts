@@ -194,6 +194,8 @@ async function fetchDealsByPipeline(pipelineId: string): Promise<Deal[]> {
 // =======================
 // Hook Principal: useBitrixData
 // =======================
+// ... (mantive tudo igual até aqui)
+
 export function useBitrixData(userId?: string, pipelineId: string = "9") {
   // Estados para dados principais
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -211,9 +213,30 @@ export function useBitrixData(userId?: string, pipelineId: string = "9") {
   const [propertyRentalCount, setPropertyRentalCount] = useState(0);
   const [nutritionCount, setNutritionCount] = useState(0);
 
-  // =======================
+  // Função para atualizar os contadores
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function updateCount(deals: Deal[]) {
+    const filteredDeals = deals.filter(deal => !userId || deal.ASSIGNED_BY_ID === userId);
+
+    console.log("Valores do campo UF_CRM_1741896394870:", filteredDeals.map(d => d.UF_CRM_1741896394870));
+    console.log("Valores de SDR_SCREENING:", filteredDeals.map(d => d.UF_CRM_PREPAYMENT_INVOICE));
+    console.log("Valores de LISTING_CLIENTS:", filteredDeals.map(d => d.UF_CRM_7Z8430));
+    console.log("Valores de PROPERTY_RENTAL:", filteredDeals.map(d => d.UF_CRM_K66TBQ));
+    console.log("Valores de NUTRITION:", filteredDeals.map(d => d.UF_CRM_9NSLPJ));
+
+    setTotal(filteredDeals.length);
+    setUrgentLateCount(
+      filteredDeals.filter(d => d.UF_CRM_1741896394870 === STATUS_TMA_URGENT_LATE).length
+    );
+    setStartTMACount(filteredDeals.filter(d => !!d.UF_CRM_START_TMA).length);
+
+    setSdrScreeningCount(filteredDeals.filter(d => isTruthyBitrixFlag(d.UF_CRM_PREPAYMENT_INVOICE)).length);
+    setListingClientsCount(filteredDeals.filter(d => isTruthyBitrixFlag(d.UF_CRM_7Z8430)).length);
+    setPropertyRentalCount(filteredDeals.filter(d => isTruthyBitrixFlag(d.UF_CRM_K66TBQ)).length);
+    setNutritionCount(filteredDeals.filter(d => isTruthyBitrixFlag(d.UF_CRM_9NSLPJ)).length);
+  }
+
   // Efeito principal que carrega dados do pipeline, usuários e estágios
-  // =======================
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -255,37 +278,14 @@ export function useBitrixData(userId?: string, pipelineId: string = "9") {
     loadData();
   }, [pipelineId]);
 
-  // =======================
-  // Efeito para atualizar contadores e exibir logs com base nos negócios carregados
-  // =======================
+  // Efeito para atualizar contadores sempre que os negócios, userId ou pipelineId mudam
   useEffect(() => {
     if (!pipelineDealsMap[pipelineId]) return;
 
-    const deals = pipelineDealsMap[pipelineId].filter(
-      deal => !userId || deal.ASSIGNED_BY_ID === userId
-    );
+    updateCount(pipelineDealsMap[pipelineId]);
+  }, [pipelineDealsMap, userId, pipelineId, updateCount]);
 
-    console.log("Valores do campo UF_CRM_1741896394870:", deals.map(d => d.UF_CRM_1741896394870));
-    console.log("Valores de SDR_SCREENING:", deals.map(d => d.UF_CRM_PREPAYMENT_INVOICE));
-    console.log("Valores de LISTING_CLIENTS:", deals.map(d => d.UF_CRM_7Z8430));
-    console.log("Valores de PROPERTY_RENTAL:", deals.map(d => d.UF_CRM_K66TBQ));
-    console.log("Valores de NUTRITION:", deals.map(d => d.UF_CRM_9NSLPJ));
-
-    setTotal(deals.length);
-    setUrgentLateCount(
-      deals.filter(d => d.UF_CRM_1741896394870 === STATUS_TMA_URGENT_LATE).length
-    );
-    setStartTMACount(deals.filter(d => !!d.UF_CRM_START_TMA).length);
-
-    setSdrScreeningCount(deals.filter(d => isTruthyBitrixFlag(d.UF_CRM_PREPAYMENT_INVOICE)).length);
-    setListingClientsCount(deals.filter(d => isTruthyBitrixFlag(d.UF_CRM_7Z8430)).length);
-    setPropertyRentalCount(deals.filter(d => isTruthyBitrixFlag(d.UF_CRM_K66TBQ)).length);
-    setNutritionCount(deals.filter(d => isTruthyBitrixFlag(d.UF_CRM_9NSLPJ)).length);
-  }, [pipelineDealsMap, userId, pipelineId]);
-
-  // =======================
-  // Retorno do hook com dados, contadores e estados
-  // =======================
+  // Retorna também a função updateCount caso queira usar externamente (opcional)
   return {
     pipelines,
     pipelineUsersMap,
@@ -299,5 +299,7 @@ export function useBitrixData(userId?: string, pipelineId: string = "9") {
     listingClientsCount,
     propertyRentalCount,
     nutritionCount,
+    updateCount,
   };
 }
+

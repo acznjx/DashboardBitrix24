@@ -4,11 +4,13 @@ interface CardInfoProps {
   title: string;
   value: string | number;
   bgColor: string;
+  kanbanHint?: string; // nova prop opcional
 }
 
-const CardInfo: React.FC<CardInfoProps> = ({ title, value, bgColor }) => {
+const CardInfo: React.FC<CardInfoProps> = ({ title, value, bgColor, kanbanHint }) => {
   return (
     <div
+      title={kanbanHint} // aparece ao passar o mouse
       style={{
         padding: "1rem",
         borderRadius: "1rem",
@@ -19,6 +21,7 @@ const CardInfo: React.FC<CardInfoProps> = ({ title, value, bgColor }) => {
         flexDirection: "column",
         justifyContent: "center",
         height: "100%",
+        cursor: kanbanHint ? "help" : "default",
       }}
     >
       <h3

@@ -8,6 +8,8 @@ import { useBitrixData } from "../hooks/useBitrixData";
 import { Deal } from "../types/bitrix";
 import TopBar from '../components/TopBar';
 
+const VALID_UPDATE_STATUSES = ["2203"]; // Status que contam como Update
+
 export default function Dashboard() {
   const [filters, setFilters] = useState({ userId: "", pipelineId: "9" });
 
@@ -18,6 +20,8 @@ export default function Dashboard() {
     pipelineDealsMap,
     pipelineUsersMap,
   } = useBitrixData(filters.userId, filters.pipelineId);
+
+  const [statusTMAUpdateCount, setStatusTMAUpdateCount] = useState(0);
 
   const [counts, setCounts] = useState({
     sdr: 0,
@@ -73,6 +77,15 @@ export default function Dashboard() {
       closedTotal: sumOpportunity([stages.closed]),
       pendingTotal: sumOpportunity([stages.cold, stages.hot, stages.listing]),
     });
+
+    // Contar só os deals com status de Update válidos (excluindo Urgent Late)
+    const tmaUpdateCount = filtered.filter(d => {
+      const status = d.UF_CRM_1741896394870;
+      return status && VALID_UPDATE_STATUSES.includes(status);
+    }).length;
+
+    setStatusTMAUpdateCount(tmaUpdateCount);
+
   }, [pipelineDealsMap, filters]);
 
   const handleFilterChange = (userId: string, pipelineId: string) => {
@@ -99,25 +112,80 @@ export default function Dashboard() {
       />
 
       <div style={{ padding: "1.5rem", paddingTop: "220px", display: "flex", flexDirection: "column", gap: "2rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
-          <CardInfo title="Pending" value={loading ? "Loading..." : `R$ ${counts.pendingTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} bgColor="#5087a4" />
-          <CardInfo title="Closing - Sold" value={loading ? "Loading..." : `R$ ${counts.closedTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} bgColor="#59a450" />
+
+        {/* CARDS MONETÁRIOS */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
+          <CardInfo title="Buy" value="R$ 0" bgColor="#4b8aa0" />
+          <CardInfo 
+            title="Pending" 
+            value={loading ? "Loading..." : `R$ ${counts.pendingTotal.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} 
+            bgColor="#35647b" 
+          />
+          <CardInfo title="Sell" value="0 $Dolar" bgColor="#fbbf24" />
+          <CardInfo title="Rental" value="$Dolar" bgColor="#fbbf24" />
+          <CardInfo title="Business" value="$Dolar" bgColor="#fbbf24" />
+          <CardInfo 
+            title="Closing - Sold" 
+            value={loading ? "Loading..." : `R$ ${counts.closedTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+            bgColor="#4caf50" 
+          />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem", marginTop: "1rem" }}>
+        {/* CARDS DE CATEGORIA DE ETAPAS */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
+          <CardInfo 
+            title="Initial Stage" 
+            value={loading ? "Loading..." : counts.sdr} 
+            bgColor="#5dbb6a"
+            kanbanHint="Kanban: Incoming Leads, SDR Screening"
+          />
+          <CardInfo 
+            title="Buy" 
+            value={loading ? "Loading..." : (counts.cold + counts.hot + counts.pending)} 
+            bgColor="#3b82f6"
+            kanbanHint="Kanban: Cold Clients, Hot Clients, Pending Sales"
+          />
+          <CardInfo 
+            title="Pendency" 
+            value={loading ? "Loading..." : counts.waiting} 
+            bgColor="#b91c1c"
+            kanbanHint="Kanban: Waiting for Realtor"
+          />
+          <CardInfo 
+            title="Listing Clients (Sell)" 
+            value={loading ? "Loading..." : counts.listing} 
+            bgColor="#3b82f6"
+            kanbanHint="Kanban: Listing Clients"
+          />
+          <CardInfo 
+            title="Property Rental" 
+            value={loading ? "Loading..." : counts.rental} 
+            bgColor="#3b82f6"
+            kanbanHint="Kanban: Property Rental"
+          />
+          <CardInfo 
+            title="Business" 
+            value={loading ? "Loading..." : counts.commercial} 
+            bgColor="#3b82f6"
+            kanbanHint="Kanban: Commercial Business"
+          />
+          <CardInfo 
+            title="Nutrition" 
+            value={loading ? "Loading..." : counts.nutrition} 
+            bgColor="#d1d5db"
+            kanbanHint="Kanban: Nutrition"
+          />
+        </div>
+
+        {/* STATUS TMA */}
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#072143", marginTop: "2rem" }}>Status TMA</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
           <CardInfo title="Total Cards" value={loading ? "Loading..." : total} bgColor="#929292" />
-          <CardInfo title="Urgent Late" value={loading ? "Loading..." : urgentLateCount} bgColor="#e53e3e" />
-          <CardInfo title="Initial Stage" value={loading ? "Loading..." : counts.sdr} bgColor="#5dbb6a" />
-          <CardInfo title="Waiting for Realtor" value={loading ? "Loading..." : counts.waiting} bgColor="#f6ad55" />
-          <CardInfo title="Cold Clients" value={loading ? "Loading..." : counts.cold} bgColor="#729fd1" />
-          <CardInfo title="Hot Clients" value={loading ? "Loading..." : counts.hot} bgColor="#6290c4" />
-          <CardInfo title="Pending Sales" value={loading ? "Loading..." : counts.pending} bgColor="#de6666" />
-          <CardInfo title="Property Rental" value={loading ? "Loading..." : counts.rental} bgColor="#6186af" />
-          <CardInfo title="Listing Clients (Sell)" value={loading ? "Loading..." : counts.listing} bgColor="#6b8fb8" />
-          <CardInfo title="Commercial Business" value={loading ? "Loading..." : counts.commercial} bgColor="#749ccb" />
-          <CardInfo title="Nutrition" value={loading ? "Loading..." : counts.nutrition} bgColor="#929292" />
+          <CardInfo title="Status TMA (Update)" value={loading ? "Loading..." : statusTMAUpdateCount} bgColor="#a3a3a3" />
+          <CardInfo title='Status TMA (Urgent "Late")' value={loading ? "Loading..." : urgentLateCount} bgColor="#b91c1c" />
         </div>
 
+        {/* GRÁFICOS */}
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1.5rem", marginTop: "2rem" }}>
           <section style={{ backgroundColor: "white", padding: "1.5rem", borderRadius: "1rem", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)" }}>
             <h2 style={{ fontSize: "1.25rem", fontWeight: "600", marginBottom: "1rem", color: "#072143" }}>Cards per Category</h2>
