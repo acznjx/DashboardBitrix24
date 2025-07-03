@@ -38,27 +38,33 @@ interface Props {
   loading: boolean;
 }
 
-interface ActiveShapeProps {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  fill: string;
-  payload: { name: string; value: number };
-  percent: number;
-  value: number;
-}
-
-function renderActiveShape(props: ActiveShapeProps) {
-  const RADIAN = Math.PI / 180;
+const renderActiveShape = (props: unknown) => {
+  // Para acessar as propriedades, você precisa afirmar o tipo ou usar type assertion:
   const {
-    cx, cy, midAngle, innerRadius, outerRadius,
-    startAngle, endAngle, fill, percent, value,
-  } = props;
+    cx = 0,
+    cy = 0,
+    midAngle = 0,
+    innerRadius = 0,
+    outerRadius = 0,
+    startAngle = 0,
+    endAngle = 0,
+    fill = '#000',
+    percent = 0,
+    value = 0,
+  } = props as {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    startAngle?: number;
+    endAngle?: number;
+    fill?: string;
+    percent?: number;
+    value?: number;
+  };
 
+  const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   const sx = cx + (outerRadius + 10) * cos;
@@ -98,7 +104,9 @@ function renderActiveShape(props: ActiveShapeProps) {
       </text>
     </g>
   );
-}
+};
+
+
 
 export default function StatusPieChart({ userId, users, deals, loading }: Props) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -127,7 +135,6 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
       }));
   }, [users, deals, userId]);
 
-  // Legenda limitada aos 7 maiores
   const legendData = useMemo(() => {
     return [...allChartData]
       .sort((a, b) => b.value - a.value)
@@ -157,7 +164,6 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
         userSelect: 'none',
       }}
     >
-      {/* Legenda com até 7 maiores */}
       <div
         style={{
           width: '180px',
@@ -215,7 +221,6 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
         )}
       </div>
 
-      {/* Gráfico com todos os dados */}
       <div style={{ flexGrow: 1 }}>
         {loading ? (
           <div style={{ textAlign: 'center', marginTop: '3rem' }}>Loading...</div>
@@ -234,8 +239,8 @@ export default function StatusPieChart({ userId, users, deals, loading }: Props)
                 innerRadius={40}
                 paddingAngle={3}
                 activeIndex={activeIndex !== null ? activeIndex : undefined}
-                activeShape={renderActiveShape as unknown}
-                onClick={(_, index) => {
+                activeShape={renderActiveShape}
+                onClick={(_data, index) => {
                   setActiveIndex(index === activeIndex ? null : index);
                 }}
               >
