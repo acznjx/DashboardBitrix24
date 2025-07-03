@@ -16,3 +16,8 @@ export interface Deal {
 
   TIMESTAMP_X?: string; 
 }
+
+export interface UserWithFullName {
+  ID: string;
+  fullName: string;
+}
